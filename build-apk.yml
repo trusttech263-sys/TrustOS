@@ -1,0 +1,46 @@
+name: Build TrustOS APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip build-essential \
+            python3-pip python3-venv \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev \
+            libtinfo6 cmake libffi-dev libssl-dev
+
+      - name: Install Buildozer
+        run: |
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user buildozer cython==0.29.36
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build debug APK
+        run: buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrustOS-Android-APK
+          path: bin/*.apk
+          if-no-files-found: error
+          retention-days: 14
